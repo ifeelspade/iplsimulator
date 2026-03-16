@@ -651,9 +651,10 @@ function renderTeams(){
   const taken=ROOM.takenTeams||[];
   document.getElementById('teams-grid').innerHTML=TEAMS.map(t=>{
     const isTaken=taken.includes(t.id)&&t.id!==ME.teamId;
-    return`<div class="team-card${ME.teamId===t.id?' sel':''}${isTaken?' taken':''}" id="tc-${t.id}" onclick="${isTaken?'':'"selTeam(\''+t.id+'\')"}">
+    const clickAttr=isTaken?'':'onclick="selTeam(\''+t.id+'\')"';
+    return`<div class="team-card${ME.teamId===t.id?' sel':''}${isTaken?' taken':''}" id="tc-${t.id}" ${clickAttr}>
       <div class="sel-ring"><div class="sel-check">✓</div></div>
-      ${isTaken?`<div class="taken-badge">TAKEN</div>`:''}
+      ${isTaken?'<div class="taken-badge">TAKEN</div>':''}
       <div class="tc-color" style="background:${t.bg};"><span class="tc-short-txt">${t.id}</span></div>
       <div class="tc-info"><div class="tc-name">${t.name}</div><div class="tc-meta">${t.id} · ₹80 CR</div></div>
     </div>`;
