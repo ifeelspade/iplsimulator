@@ -303,23 +303,31 @@ input[type=text]:focus,input[type=number]:focus{border-color:#F5A623}
 const SB_URL = 'https://syltctaaeaeeuwgypbrm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bHRjdGFhZWFlZXV3Z3lwYnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDQ5NTEsImV4cCI6MjA4OTE4MDk1MX0.z_k5cKsJ5WpgxP0deQSdoWK-nSQG6LNPyGtyZ4-TQFo';
 
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
 async function sbGet(code){
-  const r=await fetch(`${SB_URL}/rest/v1/rooms?room_code=eq.${code}&select=data`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-  const d=await r.json();
-  return d&&d[0]?JSON.parse(d[0].data):null;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/rooms?room_code=eq.${encodeURIComponent(code)}&select=data`,{headers:SB_HDR});
+    const d=await r.json();
+    if(d&&d[0]&&d[0].data)return JSON.parse(d[0].data);
+    return null;
+  }catch(e){console.error('sbGet',e);return null;}
 }
-async function sbSet(code,data){
-  const body=JSON.stringify({room_code:code,data:JSON.stringify(data),updated_at:Date.now()});
-  const r=await fetch(`${SB_URL}/rest/v1/rooms?room_code=eq.${code}`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body});
-  if(r.status===404||r.status===200||r.status===204){
-    if(r.status!==204){
-      await fetch(`${SB_URL}/rest/v1/rooms`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body});
-    }
-  }
-}
+
 async function sbUpsert(code,data){
-  const body=JSON.stringify({room_code:code,data:JSON.stringify(data),updated_at:Date.now()});
-  await fetch(`${SB_URL}/rest/v1/rooms`,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body});
+  try{
+    const payload=JSON.stringify(data);
+    const body=JSON.stringify({room_code:code,data:payload,updated_at:Date.now()});
+    const patch=await fetch(`${SB_URL}/rest/v1/rooms?room_code=eq.${encodeURIComponent(code)}`,{
+      method:'PATCH',headers:{...SB_HDR,'Prefer':'return=representation'},body
+    });
+    const patched=await patch.json();
+    if(!patched||patched.length===0){
+      await fetch(`${SB_URL}/rest/v1/rooms`,{
+        method:'POST',headers:{...SB_HDR,'Prefer':'return=minimal'},body
+      });
+    }
+  }catch(e){console.error('sbUpsert',e);}
 }
 
 // ── DATA ──
